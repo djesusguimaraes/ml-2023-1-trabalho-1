@@ -1,12 +1,29 @@
 import numpy as np
 import pandas as pd
 
-data = pd.read_excel('dataset.xlsx')
+def clean_data():
+	data = pd.read_excel('dataset.xlsx')
 
-string_columns = data.select_dtypes(include=['object']).columns
-data = data.drop(string_columns, axis=1)
+	print(f'Original Shape: \t{data.shape}\n')
 
-data.to_excel('dataset_clean.xlsx')
+	data = data.dropna(axis=1, how='all')
+
+	print(f'Not NaN Columns Shape: \t{data.shape}\n')
+
+	data = data.dropna(thresh=10)
+
+	print(f'Not NaN Shape: \t{data.shape}\n')
+
+	string_columns = data.select_dtypes(include=['object']).columns
+
+	print(f'Object Columns count: {len(string_columns)}\n')
+
+	for column in string_columns:
+		data[column] = data[column].astype('category').cat.codes
+
+	data.to_excel('dataset_clean.xlsx')
+ 
+	return data
 
 def z_score_outliers(df, threshold=3):
 	z_scores = np.abs((df - df.mean()) / df.std())
@@ -16,24 +33,6 @@ def z_score_outliers(df, threshold=3):
 	print(outliers)
 
 	outliers.to_excel('outliers_zscore.xlsx')
- 
-
-def quartile_outliers(df, threshold=1.5):
-	Q1 = df.quantile(0.25)
-	Q3 = df.quantile(0.75)
-
-	IQR = Q3 - Q1
-
-	cutoff = threshold * IQR
-
-	lower = Q1 - cutoff
-	upper = Q3 + cutoff
-	outliers = df[(df < lower) | (df > upper)].dropna(how='all')
-
-	print(outliers)
-
-	outliers.to_excel('outliers_quartile.xlsx')
 
 
-z_score_outliers(data)
-quartile_outliers(data)
+z_score_outliers(clean_data())
